@@ -1,11 +1,5 @@
 """
-Created on Mon Jan 28 11:00:45 2019
-
-@author: Hanse
-"""
-
-"""
-Created on Wed Dec 26 12:09:20 2018
+Created on Mon Jan 28 16:00:45 2019
 
 @author: Hanse
 """
@@ -53,14 +47,13 @@ print(shops.head(10))
 
 
 transactions['date']=pd.to_datetime(transactions['date'],format='%d.%m.%Y')
-
 transactions['item_rev'] = transactions['item_price'] * transactions['item_cnt_day']
 
 tr_201409 = transactions[(transactions.date.dt.month == 9) & (transactions.date.dt.year == 2014)]
-
 rev_201409 = tr_201409.groupby(['shop_id'], as_index = False)['item_rev'].sum()
 
 print("Q1: ", rev_201409.item_rev.max())
+
 
 ###############################################################################
 # Q2: What item category generated the highest revenue in summer 2014?
@@ -70,6 +63,8 @@ print("Q1: ", rev_201409.item_rev.max())
 # Hints:
 # Note, that for an object x of type pd.Series: x.argmax() returns index of the maximum element. pd.Series can have non-trivial index (not [1, 2, 3, ... ]).
 ###############################################################################
+
+
 
 tr_2014sum=transactions[(transactions.date.dt.year == 2014) & (transactions.date.dt.month >= 6) & (transactions.date.dt.month <= 9)]
 rev_2014sum=tr_2014sum.merge(items, left_on='item_id', right_on='item_id', how='left')
@@ -93,12 +88,12 @@ unchg_stats = []
 
 for itemid in np.unique(transactions['item_id']):
     
-    subsetd = transactions[transactions['item_id'] == itemid]
-    meanpx = subsetd['item_price'].mean()
-    sdpx = subsetd['item_price'].std()
-    maxpx = subsetd['item_price'].max()
-    minpx = subsetd['item_price'].min()
-    countpx = subsetd['item_price'].count()
+    subsetd = transactions[transactions.item_id == itemid]
+    meanpx = subsetd.item_price.mean()
+    sdpx = subsetd.item_price.std()
+    maxpx = subsetd.item_price.max()
+    minpx = subsetd.item_price.min()
+    countpx = subsetd.item_price.count()
     
     sum_stats.append([itemid, meanpx, sdpx, maxpx, minpx, countpx])
     if maxpx == minpx:
@@ -119,15 +114,20 @@ print("Q3: ", len(unchg_stats))
 
 shop_id = 25
 
-s25_dec2014 = transactions[(transactions['shop_id'] == shop_id) & (transactions['month'] == 12) & (transactions['year'] == 2014)]
-items_sold = s25_dec2014.groupby(['day'], as_index = False).agg({'item_cnt_day':np.sum})
+s25_dec2014 = transactions[(transactions.shop_id == shop_id) & 
+                           (transactions.date.dt.month == 12) & 
+                           (transactions.date.dt.year == 2014)]
+
+s25_dec2014['day'] = transactions.date.dt.day
+items_sold = s25_dec2014.groupby(['day'], as_index = False)['item_cnt_day'].sum()
 
 net_items_sold = items_sold[items_sold['item_cnt_day'].map(lambda x: x != 0)]        
 
-total_num_items_sold = net_items_sold['item_cnt_day']
-days = net_items_sold['day']
+total_num_items_sold = net_items_sold.item_cnt_day
+days = net_items_sold.day
 
-# Plot it
+
+## Plot it
 plt.plot(days, total_num_items_sold)
 plt.ylabel('Num items')
 plt.xlabel('Day')
