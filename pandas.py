@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 ## %matplotlib inline
 
 
+# Customize for particular drive setup
 DRIVE = 'C:'
 USERHC = 'Users'
 HANSE = 'Hanse'
@@ -51,37 +52,15 @@ print(shops.head(10))
 # pd.datetime type with pd.to_datetime function, but do not forget to set correct format argument.
 
 
-def dayval(datestr):
-    return int(datestr[:2])
+transactions['date']=pd.to_datetime(transactions['date'],format='%d.%m.%Y')
 
-def monthval(datestr):
-    return int(datestr[3:5])
+transactions['item_rev'] = transactions['item_price'] * transactions['item_cnt_day']
 
-def yearval(datestr):
-    return int(datestr[6:10])
+tr_201409 = transactions[(transactions.date.dt.month == 9) & (transactions.date.dt.year == 2014)]
 
-def monthyear(datestr):
-    return datestr[3:10]
-
-def fxy(x, y):
-    return x * y
-
-
-transactions['day']=transactions.apply(lambda mx: dayval(mx.date), axis=1)
-transactions['month']=transactions.apply(lambda mx: monthval(mx.date), axis=1)
-transactions['year']=transactions.apply(lambda mx: yearval(mx.date), axis=1)
-
-# transactions['month.year']=transactions.apply(lambda mx: monthyear(mx['date']), axis=1)
-transactions['item_rev']=transactions.apply(lambda mx: fxy(mx.item_price, mx.item_cnt_day), axis=1)
-
-#tr_201409 = transactions[transactions['date'][3:10]=='09.2014']
-
-tr_201409 = transactions[(transactions.month == 9) & (transactions.year == 2014)]
-
-rev_201409 = tr_201409.groupby(['shop_id'], as_index = False).agg({'item_rev':np.sum})
+rev_201409 = tr_201409.groupby(['shop_id'], as_index = False)['item_rev'].sum()
 
 print("Q1: ", rev_201409.item_rev.max())
-
 
 ###############################################################################
 # Q2: What item category generated the highest revenue in summer 2014?
@@ -92,17 +71,9 @@ print("Q1: ", rev_201409.item_rev.max())
 # Note, that for an object x of type pd.Series: x.argmax() returns index of the maximum element. pd.Series can have non-trivial index (not [1, 2, 3, ... ]).
 ###############################################################################
 
-def is_summer(datestr):
-    if int(datestr[3:5]) >= 6 and int(datestr[3:5]) <= 8:
-        return True
-    else:
-        return False
-
-transactions['summer']=transactions.apply(lambda mx: is_summer(mx['date']), axis=1)
-
-tr_2014sum=transactions[(transactions['year']==2014) & (transactions['summer']==True)]
+tr_2014sum=transactions[(transactions.date.dt.year == 2014) & (transactions.date.dt.month >= 6) & (transactions.date.dt.month <= 9)]
 rev_2014sum=tr_2014sum.merge(items, left_on='item_id', right_on='item_id', how='left')
-rev_2014sum_bycat=rev_2014sum.groupby(['item_category_id'], as_index = False).agg({'item_rev':np.sum})
+rev_2014sum_bycat=rev_2014sum.groupby(['item_category_id'], as_index = True)['item_rev'].sum()
 
 print("Q2: ", rev_2014sum_bycat.idxmax())
 
